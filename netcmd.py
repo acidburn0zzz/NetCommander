@@ -95,11 +95,11 @@ class NetCmd:
     for net, msk, gw, iface, addr in conf.route.routes:
       # found a route for given interface
       if iface == self.interface:
+        network = ltoa( net )
         # compute network representation if not yet done
-        if net != 0L:
-          net  = ltoa( net )
+        if network.split('.')[0] == addr.split('.')[0]:
           bits = self.__bit_count( msk )
-          self.network = "%s/%d" % ( net, bits )
+          self.network = "%s/%d" % ( network, bits )
         # search for a valid network gateway
         if self.gateway is None and gw != '0.0.0.0':
           self.gateway = gw
