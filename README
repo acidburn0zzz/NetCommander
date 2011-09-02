@@ -10,9 +10,16 @@ Options:
   -I IFACE, --iface=IFACE
                         Network interface to use if different from the default
                         one.
+  -N NETWORK, --network=NETWORK
+                        Network to work on.
+  -G GATEWAY, --gateway=GATEWAY
+                        Gateway to use.
   -K, --kill            Kill targets connections instead of forwarding them.
   -D DELAY, --delay=DELAY
                         Delay in seconds between one arp packet and another,
                         default is 5.
+  -A, --all             Keep spoofing and spoof all connected and later
+                        connected interfaces.
+
 
 
