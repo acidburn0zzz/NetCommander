@@ -24,11 +24,14 @@ import os
 import sys
 import atexit
 from optparse import OptionParser
+import warnings
 
+# ignore deprecation warnings from scapy inclusion
+warnings.filterwarnings( "ignore", category = DeprecationWarning )
 # disable scapy warnings about ipv6 and shit like that
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
-from scapy.all import srp,Ether,ARP,conf,sendp,ltoa
+from scapy.all import srp,Ether,ARP,conf,sendp,ltoa,atol
 
 class NetCmd:
 
@@ -88,18 +91,18 @@ class NetCmd:
    
     print "@ Searching for the network gateway address ..."
 
-    for route in conf.route.routes:
+    # for route in conf.route.routes:
+    for net, msk, gw, iface, addr in conf.route.routes:
       # found a route for given interface
-      if route[3] == self.interface:
+      if iface == self.interface:
         # compute network representation if not yet done
-        if self.network is None:
-          net  = ltoa( route[0] )
-          msk  = route[1]
+        if net != 0L:
+          net  = ltoa( net )
           bits = self.__bit_count( msk )
           self.network = "%s/%d" % ( net, bits )
         # search for a valid network gateway
-        if self.gateway is None and route[2] != '0.0.0.0':
-          self.gateway = route[2]
+        if self.gateway is None and gw != '0.0.0.0':
+          self.gateway = gw
     
     if self.gateway is not None and self.network is not None:
       print "@ Gateway is %s on network %s ." % ( self.gateway, self.network )
@@ -173,7 +176,7 @@ class NetCmd:
       sendp( packet, iface_hint = self.gateway )
 
 try:
-  print "\n\tNetCommander 1.2 - An easy to use arp spoofing tool.\n \
+  print "\n\tNetCommander 1.3 - An easy to use arp spoofing tool.\n \
 \tCopyleft Simone Margaritelli <evilsocket@gmail.com>\n \
 \thttp://www.evilsocket.net\n\thttp://www.backbox.org\n";
          
