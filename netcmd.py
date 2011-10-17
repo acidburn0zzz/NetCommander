@@ -44,14 +44,15 @@ class NetCmd:
     return bits
 
   def __set_forwarding( self, status ):
+    # Mac OS X
     if sys.platform == 'darwin':
       p = os.popen( "sysctl -w net.inet.ip.forwarding=%s" % '1' if status == True else '0' )
       output = p.readline()
       p.close()
 
-      if not re.match( r'net\.inet\.ip\.forwarding:\s+\d\s+\->\s+\d', output ):
+      if status and not re.match( r'net\.inet\.ip\.forwarding:\s+\d\s+\->\s+\d', output ):
         raise Exception( "Unexpected output '%s' while turning ip forwarding." % output )
-
+    # Linux
     else: 
       if not os.path.exists( '/proc/sys/net/ipv4/ip_forward' ):
         raise Exception( "'/proc/sys/net/ipv4/ip_forward' not found, this is not a compatible operating system." )
