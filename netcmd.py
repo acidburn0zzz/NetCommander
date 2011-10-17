@@ -61,6 +61,24 @@ class NetCmd:
       fd.write( '1' if status == True else '0' )
       fd.close()
 
+  def __preload_mac_table( self ):
+    if os.path.exists( 'mac-prefixes' ):
+      print "@ Preloading MAC table ..."
+
+      fd = open( 'mac-prefixes' )
+      for line in iter(fd):
+        ( prefix, vendor ) = line.strip().split( ' ', 1 )
+        self.mac_prefixes[prefix] = vendor
+
+      fd.close()
+
+  def __find_mac_vendor( self, mac ):
+    mac = mac.replace( ':', '' ).upper()[:6]
+    try:
+      return self.mac_prefixes[mac]
+    except KeyError as e:
+      return ''  
+
   def find_alive_hosts( self ):
     self.gateway_hw = None
     self.endpoints  = []
@@ -87,18 +105,21 @@ class NetCmd:
     # scapy, you're pretty cool ... but shut the fuck up bitch!
     conf.verb = 0
 
-    self.interface  = interface
-    self.network    = network
-    self.targets    = [] 
-    self.gateway    = gateway
-    self.all        = all
-    self.gateway_hw = None
-    self.packets    = []
-    self.restore    = []
-    self.endpoints  = []
+    self.interface    = interface
+    self.network      = network
+    self.targets      = [] 
+    self.gateway      = gateway
+    self.all          = all
+    self.gateway_hw   = None
+    self.packets      = []
+    self.restore      = []
+    self.endpoints    = []
+    self.mac_prefixes = {}
 
     if not os.geteuid() == 0:
       raise Exception( "Only root can run this script." )
+
+    self.__preload_mac_table()
    
     print "@ Searching for the network gateway address ..."
 
@@ -130,7 +151,9 @@ class NetCmd:
     else:
       while choice is None:
         for i, item in enumerate( self.endpoints ):
-          print "  [%d] %s %s" % ( i, item[0], item[1] )
+          ( mac, ip ) = item
+          vendor      = self.__find_mac_vendor( mac )
+          print "  [%d] %s %s %s" % ( i, mac, ip, "( %s )" % vendor if vendor else '' )
         choice = raw_input( "@ Choose [0-%d] (* to select all, r to refresh): " % (len(self.endpoints) - 1) )
         try:
           choice = choice.strip()
