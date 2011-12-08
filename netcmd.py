@@ -87,9 +87,9 @@ class NetCmd:
 
     # broadcast arping ftw
     ans,unans = srp( Ether( dst = "ff:ff:ff:ff:ff:ff" ) / ARP( pdst = self.network ), 
-                     verbose    = False, 
-                     filter     = "arp and arp[7] = 2", 
-                     timeout    = 2, 
+                     verbose = False, 
+                     filter  = "arp and arp[7] = 2", 
+                     timeout = 2, 
                      iface_hint = self.network )
 
     for snd,rcv in ans:
@@ -120,32 +120,21 @@ class NetCmd:
       raise Exception( "Only root can run this script." )
 
     self.__preload_mac_table()
-
+   
     print "@ Searching for the network gateway address ..."
-    
+
     # for route in conf.route.routes:
     for net, msk, gw, iface, addr in conf.route.routes:
       # found a route for given interface
       if iface == self.interface:
         network = ltoa( net )
-        
-        # Mac OS X
-        if sys.platform == 'darwin':
-          if self.gateway is None:
-            if gw != '0.0.0.0':
-              self.gateway = gw
-          elif self.network is None and network != '0.0.0.0':
-            bits = self.__bit_count( msk )
-            self.network = "%s/%d" % ( network, bits )       
-        # Linux
-        else:          
-          # compute network representation if not yet done
-          if network.split('.')[0] == addr.split('.')[0]:
-            bits = self.__bit_count( msk )
-            self.network = "%s/%d" % ( network, bits )
-          # search for a valid network gateway
-          if self.gateway is None and gw != '0.0.0.0':
-            self.gateway = gw
+        # compute network representation if not yet done
+        if network.split('.')[0] == addr.split('.')[0]:
+          bits = self.__bit_count( msk )
+          self.network = "%s/%d" % ( network, bits )
+        # search for a valid network gateway
+        if self.gateway is None and gw != '0.0.0.0':
+          self.gateway = gw
     
     if self.gateway is not None and self.network is not None:
       print "@ Gateway is %s on network %s ." % ( self.gateway, self.network )
@@ -161,13 +150,12 @@ class NetCmd:
       self.targets = self.endpoints
     else:
       while choice is None:
+        for i, item in enumerate( self.endpoints ):
+          ( mac, ip ) = item
+          vendor      = self.__find_mac_vendor( mac )
+          print "  [%d] %s %s %s" % ( i, mac, ip, "( %s )" % vendor if vendor else '' )
+        choice = raw_input( "@ Choose [0-%d] (* to select all, r to refresh): " % (len(self.endpoints) - 1) )
         try:
-          for i, item in enumerate( self.endpoints ):
-            ( mac, ip ) = item
-            vendor      = self.__find_mac_vendor( mac )
-            print "  [%d] %s %s %s" % ( i, mac, ip, "( %s )" % vendor if vendor else '' )
-            
-          choice = raw_input( "@ Choose [0-%d] (* to select all, r to refresh): " % (len(self.endpoints) - 1) )        
           choice = choice.strip()
           if choice == '*':
             self.targets = self.endpoints
@@ -176,8 +164,6 @@ class NetCmd:
             self.find_alive_hosts()
           else:
             self.targets.append( self.endpoints[ int(choice) ] )
-        except KeyboardInterrupt:
-          quit()
         except Exception as e:
           print "@ Invalid choice!"
           choice = None
